@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email String  @unique
+  hash  String?
+
+  firstName         String?
+  lastName          String?
+  oAuthProvider     String?
+  oAuthId           String?   @unique
+  oAuthAccessToken  String?
+  oAuthRefreshToken String?
+  oAuthExpiresAt    DateTime?
+
+  bookmarks Bookmark[]
+  comments  Comment[]
+  profile   Profile?
+  role      UserRole   @default(USER)
+
+  @@map("users")
+}
+
+model Profile {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  bio       String?
+  avatarUrl String?
+
+  @@map("profiles")
+}
+
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title       String
+  description String?
+  link        String
+
+  userId     Int
+  user       User          @relation(fields: [userId], references: [id])
+  bookmarkId Int?
+  tags       BookmarkTag[]
+  comments   Comment[]
+
+  @@map("bookmarks")
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name      String        @unique
+  bookmarks BookmarkTag[]
+
+  @@map("tags")
+}
+
+model BookmarkTag {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookmarkId Int
+
+  tagId Int
+
+  bookmark Bookmark @relation(fields: [bookmarkId], references: [id])
+  tag      Tag      @relation(fields: [tagId], references: [id])
+
+  @@map("bookmark_tags")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  text       String
+  bookmarkId Int
+  userId     Int
+
+  bookmark Bookmark @relation(fields: [bookmarkId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
